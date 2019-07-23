@@ -16,11 +16,7 @@ sub init
 	my $attribs=$Psh::term->Attribs;
 
 	# The following is ridiculous, but....
-	if( $Psh::term->ReadLine eq 'Term::ReadLine::Perl') {
-		$APPEND='completer_terminator_character';
-	} elsif( $Psh::term->ReadLine eq 'Term::ReadLine::Gnu') {
-		$APPEND='completion_append_character';
-	}
+   $APPEND='completer_terminator_character';
 
 	# Only ::Gnu understand it, and ::Perl ignores it silently.
 	$attribs->{completion_display_matches_hook}

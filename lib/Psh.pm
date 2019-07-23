@@ -15,6 +15,7 @@ require Psh::Joblist;
 require Psh::Parser;
 require Psh::PerlEval;
 require Psh::Options;
+require Psh::ReadLine;
 
 use strict;
 
@@ -474,10 +475,9 @@ sub iget
 
 	# Additional newline handling for prompts as Term::ReadLine::Perl
 	# cannot use them properly
-	if( $Psh::term->ReadLine eq 'Term::ReadLine::Perl' &&
-		$prompt=~ /^(.*\n)([^\n]+)$/) {
-		$prompt_pre=$1;
-		$prompt=$2;
+	if($prompt =~ /^(.*\n)([^\n]+)$/) {
+   	$prompt_pre=$1;
+   	$prompt=$2;
 	}
 
 	Psh::OS::setup_readline_handler();
@@ -639,42 +639,33 @@ sub finish_initialize
 sub initialize_interactive_mode {
 	if (-t STDIN) {
 		#
-		# Set up Term::ReadLine:
+		# Set up Psh::ReadLine:
 		#
-		eval { require Term::ReadLine; };
-		if ($@) {
-			$Psh::term = undef;
-			Psh::Util::print_error_i18n('no_readline');
-		} else {
-			eval { $Psh::term= Term::ReadLine->new('psh'); };
-			if( $@) {
-				# Try one more time after a second, maybe the tty is
-				# not setup
-				sleep 1;
-				eval { $Psh::term= Term::ReadLine->new('psh'); };
-				if( $@) {
-					Psh::Util::print_error_i18n('readline_error',$@);
-					$Psh::term= undef;
-				}
-			}
-			if( $Psh::term) {
-				$Psh::term->MinLine(10000);   # We will handle history adding
-				# ourselves (undef causes trouble).
-				$Psh::term->ornaments(0);
-				Psh::Util::print_debug_class('i','[Using ReadLine: ', $Psh::term->ReadLine(), "]\n");
-				if ($Psh::term->ReadLine() eq 'Term::ReadLine::Gnu') {
-					$readline_saves_history = 1;
-				}
-				my $attribs= $Psh::term->Attribs;
-				$attribs->{completion_function} =
-				  \&completion_dummy;
+      eval { $Psh::term = Psh::ReadLine->new('psh'); };
+      if( $@) {
+         # Try one more time after a second, maybe the tty is
+         # not setup
+         sleep 1;
+         eval { $Psh::term = Psh::ReadLine->new('psh'); };
+         if( $@) {
+            Psh::Util::print_error_i18n('readline_error',$@);
+            $Psh::term= undef;
+         }
+      }
+      if( $Psh::term) {
+         $Psh::term->MinLine(10000);   # We will handle history adding
+         # ourselves (undef causes trouble).
+         $Psh::term->ornaments(0);
+         Psh::Util::print_debug_class('i','[Using ReadLine: ', $Psh::term->ReadLine(), "]\n");
+         my $attribs= $Psh::term->Attribs;
+         $attribs->{completion_function} =
+           \&completion_dummy;
 
-				my $word_break=" \\\n\t\"&{}('`\$\%\@~<>=;|/";
-				$attribs->{special_prefixes}= "\$\%\@\~\&";
-				$attribs->{word_break_characters}= $word_break;
-				$attribs->{completer_word_break_characters}= $word_break ;
-			}
-		}
+         my $word_break=" \\\n\t\"&{}('`\$\%\@~<>=;|/";
+         $attribs->{special_prefixes}= "\$\%\@\~\&";
+         $attribs->{word_break_characters}= $word_break;
+         $attribs->{completer_word_break_characters}= $word_break ;
+      }
 
 		Psh::OS::install_resize_handler();
 		Psh::OS::reinstall_resize_handler();
@@ -721,6 +712,7 @@ sub completion_dummy {
 
 sub setup_term_misc {
 	return unless $Psh::term;
+   # TODO defun with Term::ReadLine::Perl mod, Psh::ReadLine
 	if ($Psh::term->can('add_defun')) { # Term::ReadLine::Gnu
 		$Psh::term->add_defun('run-help', \&run_help);
 		$Psh::term->parse_and_bind("\"\eh\":run-help"); # bind to ESC-h
