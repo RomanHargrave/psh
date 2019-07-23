@@ -5,7 +5,7 @@ require Psh::OS;
 
 # externally stored options
 my %env_options= qw( cdpath 1 fignore 1 histsize 1 ignoreeof 1
-                     ps1 1 ps2 1 path 1);
+                     path 1);
 
 # internally stored options and their defaults
 my %options=(
